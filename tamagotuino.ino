@@ -2,6 +2,8 @@
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 const int feedButton = 6;
+const int heatSensor = A0;
+const float baselineTemp = 19.0;
 int fullness = 10;
 bool isHungry = false;
 
@@ -17,10 +19,6 @@ void setup() {
 void loop() {
 
   activatedFeedButton = digitalRead(feedButton);
-//      if (activatedFeedButton == HIGH) {
-//      fullness = 10;
-//    }
-
   
   if (fullness <= 0) {
     diedDisplay();
@@ -33,14 +31,15 @@ void loop() {
     live();
   }
 
-    if (activatedFeedButton == HIGH && isHungry == true) {
-      isHungry = false;
-      fullness = 10;
-    }
+  if (activatedFeedButton == HIGH && isHungry == true) {
+    isHungry = false;
+    fullness = 10;
+  }
+  
 }
 
 void live() {
-  delay(800);
+  delay(1000);
   fullness--;
 }
 

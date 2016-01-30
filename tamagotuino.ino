@@ -3,12 +3,16 @@ LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 const int feedButton = 6;
 const int heatSensor = A0;
-const float baselineTemp = 22.0;
+const int temperatureThreshold = 23.0;
 int fullness = 10;
 float rawTemperature;
 int temperature;
+int pitch = 1000;
+int cryCounter = 0;
 bool isHungry;
 bool isCold;
+bool isDead;
+
 
 int activatedFeedButton = 0;
 
@@ -18,36 +22,36 @@ void setup() {
   pinMode(feedButton, INPUT);
 
   checkTemperature();
-
   contentDisplay();
-
 }
 
 void loop() {
-
   activatedFeedButton = digitalRead(feedButton);
   int heatValue = analogRead(heatSensor);
-  Serial.print("Sensor Value: ");
-  Serial.print(heatValue);
 
-  checkTemperature();
+  checkTemperature();  
   
-  if (fullness <= 0) {
+  if (fullness <= 0 || temperature < (temperatureThreshold - 4)) {
+    if (cryCounter == 0) {
+    deathCry();
+    cryCounter++;
+    }
     diedDisplay();
   } else if (fullness < 6) {
     gettingHungryDisplay();
     isHungry = true;
+    gettingHungrySound();
     live();
   } else if (isCold == true) {
     gettingColdDisplay();
+    live();
   } else {
     contentDisplay();
     live();
   }
 
   if (activatedFeedButton == HIGH && isHungry == true) {
-    isHungry = false;
-    fullness = 30;
+    feed();
   }
   
 }
@@ -58,6 +62,7 @@ void live() {
 }
 
 void feed() {
+  isHungry = false;
   fullness = 10;
 }
 
@@ -65,16 +70,30 @@ void checkTemperature() {
   int heatValue = analogRead(heatSensor);
   float voltage = (heatValue/1024.0) * 5;
   rawTemperature = (voltage -.5) * 100;
-  Serial.print(", Volts: ");
-  Serial.print(voltage);
   temperature = (int) rawTemperature;
   
-  if (temperature < 24) {
+  if (temperature < temperatureThreshold) {
     isCold = true;
   } else {
     isCold = false;
   }
   
+}
+
+void gettingHungrySound() {
+  tone(7, 100, 150);
+  delay(150);
+  tone(7, 150, 75);
+  delay(75);
+  tone(7, 160, 75);
+}
+
+void deathCry() {
+  tone(7, 80, 150);
+  delay(150);
+  tone(7, 70, 150);
+  delay(150);
+  tone(7, 60, 450);
 }
 
 void contentDisplay() {
@@ -98,7 +117,7 @@ void gettingColdDisplay() {
   lcd.print("Getting cold");
   lcd.setCursor(0, 1);
   lcd.print("(~_~)");
-  delay(100);
+  delay(1000);
 }
 
 void diedDisplay() {
@@ -107,5 +126,6 @@ void diedDisplay() {
   lcd.print("You messed up...");
   lcd.setCursor(0, 1);
   lcd.print("(X_X)");
+  delay(10000);
 }
 

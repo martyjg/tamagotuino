@@ -12,6 +12,7 @@ int cryCounter = 0;
 bool isHungry;
 bool isCold;
 bool isDead;
+bool soundOn = false;
 
 
 int activatedFeedButton = 0;
@@ -20,19 +21,26 @@ void setup() {
   Serial.begin(9600);
   lcd.begin(16, 2);
   pinMode(feedButton, INPUT);
-
+  for (int ledNumber = 8; ledNumber < 11; ledNumber++) {
+    pinMode(ledNumber, OUTPUT);
+    digitalWrite(ledNumber, LOW);
+  }
   checkTemperature();
   contentDisplay();
 }
 
 void loop() {
+
   activatedFeedButton = digitalRead(feedButton);
   int heatValue = analogRead(heatSensor);
-
-  checkTemperature();  
+  float voltage = (heatValue/1024.0) * 5;
+  rawTemperature = (voltage -.5) * 100;
+  temperature = (int) rawTemperature;
+  checkTemperature();
+  if (isDead == false) ledStatus();
   
-  if (fullness <= 0 || temperature < (temperatureThreshold - 4)) {
-    if (cryCounter == 0) {
+  if (fullness <= 0 || temperature < (temperatureThreshold - 5)) {
+    if (cryCounter == 0 && soundOn == true) {
     deathCry();
     cryCounter++;
     }
@@ -40,7 +48,9 @@ void loop() {
   } else if (fullness < 6) {
     gettingHungryDisplay();
     isHungry = true;
-    gettingHungrySound();
+    if (soundOn == true) {
+      gettingHungrySound();
+    }
     live();
   } else if (isCold == true) {
     gettingColdDisplay();
@@ -67,10 +77,6 @@ void feed() {
 }
 
 void checkTemperature() {
-  int heatValue = analogRead(heatSensor);
-  float voltage = (heatValue/1024.0) * 5;
-  rawTemperature = (voltage -.5) * 100;
-  temperature = (int) rawTemperature;
   
   if (temperature < temperatureThreshold) {
     isCold = true;
@@ -78,6 +84,28 @@ void checkTemperature() {
     isCold = false;
   }
   
+}
+
+void ledStatus() {
+  Serial.print("THIS IS BEING CALLED");
+  if (temperature >= temperatureThreshold) {
+    digitalWrite(8, HIGH);
+    digitalWrite(9, HIGH);
+    digitalWrite(10, HIGH);
+  } else if (temperature <= (temperatureThreshold - 5)) {
+    isDead = true;
+    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
+    digitalWrite(10, LOW);
+  } else if (temperature < (temperatureThreshold - 3)) {
+    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
+    digitalWrite(10, HIGH);
+  } else {
+    digitalWrite(8, LOW);
+    digitalWrite(9, HIGH);
+    digitalWrite(10, HIGH);
+  }
 }
 
 void gettingHungrySound() {
